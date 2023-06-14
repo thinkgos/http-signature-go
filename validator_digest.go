@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/things-go/httpsign/digest"
+	"github.com/things-go/http-signautre-go/digest"
 )
 
 // DigestValidator checking digest in header match body
@@ -20,8 +20,18 @@ func NewDigestValidator(digest digest.Digest) *DigestValidator {
 
 // Validate return error when checking digest match body
 func (v *DigestValidator) Validate(r *http.Request, _ *Parameter) error {
+	if r.ContentLength == 0 {
+		return nil
+	}
 	headerDigest := r.Header.Get(DigestHeader)
-	digest, err := v.calculateDigest(r)
+
+	// FIXME: using buffer to prevent using too much memory
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+	r.Body = io.NopCloser(bytes.NewBuffer(body))
+	digest, err := v.digest.Sign(body)
 	if err != nil {
 		return err
 	}
@@ -29,18 +39,4 @@ func (v *DigestValidator) Validate(r *http.Request, _ *Parameter) error {
 		return ErrDigestMismatch
 	}
 	return nil
-}
-
-func (v *DigestValidator) calculateDigest(r *http.Request) (string, error) {
-	if r.ContentLength == 0 {
-		return "", nil
-	}
-	// TODO: Read body using buffer to prevent using too much memory
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return "", err
-	}
-	r.Body = io.NopCloser(bytes.NewBuffer(body))
-
-	return v.digest.Sign(body)
 }

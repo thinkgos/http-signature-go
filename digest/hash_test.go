@@ -11,7 +11,7 @@ import (
 )
 
 func TestDigest_Hash(t *testing.T) {
-	plainText := []byte("1234")
+	plainText := []byte("hello world!")
 	wantHashFunc := func(name string, h func() hash.Hash) string {
 		hasher := h()
 		hasher.Write(plainText)
