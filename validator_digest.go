@@ -2,25 +2,26 @@ package httpsign
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/base64"
-	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/things-go/httpsign/digest"
 )
 
 // DigestValidator checking digest in header match body
-type DigestValidator struct{}
+type DigestValidator struct {
+	digest digest.Digest
+}
 
 // NewDigestValidator return pointer of new DigestValidator
-func NewDigestValidator() *DigestValidator {
-	return &DigestValidator{}
+func NewDigestValidator(digest digest.Digest) *DigestValidator {
+	return &DigestValidator{digest: digest}
 }
 
 // Validate return error when checking digest match body
 func (v *DigestValidator) Validate(r *http.Request, _ *Parameter) error {
 	headerDigest := r.Header.Get(DigestHeader)
-	digest, err := calculateDigest(r)
+	digest, err := v.calculateDigest(r)
 	if err != nil {
 		return err
 	}
@@ -30,7 +31,7 @@ func (v *DigestValidator) Validate(r *http.Request, _ *Parameter) error {
 	return nil
 }
 
-func calculateDigest(r *http.Request) (string, error) {
+func (v *DigestValidator) calculateDigest(r *http.Request) (string, error) {
 	if r.ContentLength == 0 {
 		return "", nil
 	}
@@ -40,11 +41,6 @@ func calculateDigest(r *http.Request) (string, error) {
 		return "", err
 	}
 	r.Body = io.NopCloser(bytes.NewBuffer(body))
-	h := sha256.New()
-	h.Write(body)
-	if err != nil {
-		return "", err
-	}
-	digest := fmt.Sprintf("SHA-256=%s", base64.StdEncoding.EncodeToString(h.Sum(nil)))
-	return digest, nil
+
+	return v.digest.Sign(body)
 }

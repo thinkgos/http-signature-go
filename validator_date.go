@@ -27,10 +27,9 @@ func (v *DateValidator) Validate(r *http.Request, _ *Parameter) error {
 	if err != nil {
 		return ErrDateInvalid
 	}
-	serverTime := time.Now()
-	start := serverTime.Add(-v.Gap)
-	stop := serverTime.Add(v.Gap)
-	if t.Before(start) || t.After(stop) {
+	st := time.Now()
+	start, end := st.Add(-v.Gap), st.Add(v.Gap)
+	if t.Before(start) || t.After(end) {
 		return ErrDateNotInRange
 	}
 	return nil

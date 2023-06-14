@@ -24,12 +24,10 @@ func (m *SigningMethodHMAC) Alg() string { return m.Name }
 // Verify implements verification for the SigningMethod. Returns nil if
 // the signature is valid. Key must be []byte.
 func (m *SigningMethodHMAC) Verify(signingString string, sig []byte, key any) error {
-	// Verify the key is the right type
 	keyBytes, ok := key.([]byte)
 	if !ok {
 		return ErrKeyTypeInvalid
 	}
-	// Can we use the specified hashing method?
 	if !m.Hash.Available() {
 		return ErrHashUnavailable
 	}

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/things-go/httpsign/digest"
 )
 
 /*************************  sha256 signing method for testing *****************/
@@ -85,7 +86,7 @@ func (v *mockParameterValid) Validate(r *http.Request, got *Parameter) error {
 
 var mockValidator = []Validator{
 	&dateAlwaysValid{},
-	NewDigestValidator(),
+	NewDigestValidator(digest.DigestHashSha256),
 }
 
 func newAuthorizationHeader(s string) http.Header {
