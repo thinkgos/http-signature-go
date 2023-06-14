@@ -29,7 +29,7 @@ func (m *SigningMethodECDSA) Alg() string {
 
 // Verify implements token verification for the SigningMethod.
 // For this verify method, key must be an ecdsa.PublicKey struct
-func (m *SigningMethodECDSA) Verify(signingString string, sig []byte, key any) error {
+func (m *SigningMethodECDSA) Verify(signingBytes, sig []byte, key any) error {
 	ecdsaKey, ok := key.(*ecdsa.PublicKey)
 	if !ok {
 		return ErrKeyTypeInvalid
@@ -45,7 +45,7 @@ func (m *SigningMethodECDSA) Verify(signingString string, sig []byte, key any) e
 		return ErrHashUnavailable
 	}
 	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
+	hasher.Write(signingBytes)
 	if verifystatus := ecdsa.Verify(ecdsaKey, hasher.Sum(nil), r, s); verifystatus {
 		return nil
 	}
@@ -54,7 +54,7 @@ func (m *SigningMethodECDSA) Verify(signingString string, sig []byte, key any) e
 
 // Sign implements token signing for the SigningMethod.
 // For this signing method, key must be an ecdsa.PrivateKey struct
-func (m *SigningMethodECDSA) Sign(signingString string, key any) ([]byte, error) {
+func (m *SigningMethodECDSA) Sign(signingBytes []byte, key any) ([]byte, error) {
 	ecdsaKey, ok := key.(*ecdsa.PrivateKey)
 	if !ok {
 		return nil, ErrKeyTypeInvalid
@@ -64,7 +64,7 @@ func (m *SigningMethodECDSA) Sign(signingString string, key any) ([]byte, error)
 	}
 
 	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
+	hasher.Write(signingBytes)
 	// Sign the string and return r, s
 	r, s, err := ecdsa.Sign(rand.Reader, ecdsaKey, hasher.Sum(nil))
 	if err != nil {

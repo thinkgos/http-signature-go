@@ -26,7 +26,7 @@ type SigningMethodHash struct {
 
 func (m *SigningMethodHash) Alg() string { return m.Name }
 
-func (m *SigningMethodHash) Verify(signingString string, sig []byte, _ any) error {
+func (m *SigningMethodHash) Verify(signingString []byte, sig []byte, _ any) error {
 	if !m.Hash.Available() {
 		return ErrHashUnavailable
 	}
@@ -38,7 +38,7 @@ func (m *SigningMethodHash) Verify(signingString string, sig []byte, _ any) erro
 	return nil
 }
 
-func (m *SigningMethodHash) Sign(signingString string, _ any) ([]byte, error) {
+func (m *SigningMethodHash) Sign(signingString []byte, _ any) ([]byte, error) {
 	if !m.Hash.Available() {
 		return nil, ErrHashUnavailable
 	}
@@ -336,7 +336,7 @@ func TestFromSignatureString(t *testing.T) {
 					},
 					t: t,
 				}
-				_, err = newParserFunc(mpv).Parse(r)
+				_, err = newParserFunc(mpv).ParseFromRequest(r)
 				require.Equal(t, tc.err, err)
 				if err != nil {
 					return

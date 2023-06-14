@@ -9,33 +9,34 @@ import (
 )
 
 func TestECDSA_Sign_Verify(t *testing.T) {
+	ecdsaSigningBytes := []byte("http signature!!")
 	tests := []struct {
 		name          string
 		privateFile   string
 		publicFile    string
 		signingMethod SigningMethod
-		signingString string
+		signingString []byte
 	}{
 		{
 			"ecdsa-sha256",
 			"testdata/ec256-private.pem",
 			"testdata/ec256-public.pem",
 			SigningMethodEcdsaSha256,
-			"http signature!!",
+			ecdsaSigningBytes,
 		},
 		{
 			"ecdsa-sha384",
 			"testdata/ec384-private.pem",
 			"testdata/ec384-public.pem",
 			SigningMethodEcdsaSha384,
-			"http signature!!",
+			ecdsaSigningBytes,
 		},
 		{
 			"ecdsa-sha512",
 			"testdata/ec512-private.pem",
 			"testdata/ec512-public.pem",
 			SigningMethodEcdsaSha512,
-			"http signature!!",
+			ecdsaSigningBytes,
 		},
 	}
 
@@ -61,7 +62,7 @@ func TestECDSA_Sign_Verify(t *testing.T) {
 }
 
 func TestECDSA(t *testing.T) {
-	testSigningString := "testEcdsa"
+	testSigningBytes := []byte("testEcdsa")
 	testInvalidSigningSig := []byte("testSig")
 	testInvalidKey := "invalidEcdsaKey"
 	testValidLenSigningSig := []byte(strings.Repeat("a", 64))
@@ -72,13 +73,13 @@ func TestECDSA(t *testing.T) {
 	publicKey, _ := ParseECPublicKeyFromPEM(publicKeyData)
 
 	t.Run("invalid key type", func(t *testing.T) {
-		_, err := SigningMethodEcdsaSha256.Sign(testSigningString, testInvalidKey)
+		_, err := SigningMethodEcdsaSha256.Sign(testSigningBytes, testInvalidKey)
 		require.ErrorIs(t, err, ErrKeyTypeInvalid)
-		err = SigningMethodEcdsaSha256.Verify(testSigningString, testInvalidSigningSig, testInvalidKey)
+		err = SigningMethodEcdsaSha256.Verify(testSigningBytes, testInvalidSigningSig, testInvalidKey)
 		require.ErrorIs(t, err, ErrKeyTypeInvalid)
 	})
 	t.Run("invalid sig len", func(t *testing.T) {
-		err := SigningMethodEcdsaSha256.Verify(testSigningString, testInvalidSigningSig, publicKey)
+		err := SigningMethodEcdsaSha256.Verify(testSigningBytes, testInvalidSigningSig, publicKey)
 		require.ErrorIs(t, err, ErrSignatureInvalid)
 	})
 	t.Run("hash unavailable", func(t *testing.T) {
@@ -88,14 +89,14 @@ func TestECDSA(t *testing.T) {
 			KeySize:   32,
 			CurveBits: 256,
 		}
-		_, err := unavailableSigningMethod.Sign(testSigningString, privateKey)
+		_, err := unavailableSigningMethod.Sign(testSigningBytes, privateKey)
 		require.ErrorIs(t, err, ErrHashUnavailable)
 		_ = testValidLenSigningSig
-		err = unavailableSigningMethod.Verify(testSigningString, testValidLenSigningSig, publicKey)
+		err = unavailableSigningMethod.Verify(testSigningBytes, testValidLenSigningSig, publicKey)
 		require.ErrorIs(t, err, ErrHashUnavailable)
 	})
 	t.Run("invalid signature", func(t *testing.T) {
-		err := SigningMethodEcdsaSha256.Verify(testSigningString, testInvalidSigningSig, publicKey)
+		err := SigningMethodEcdsaSha256.Verify(testSigningBytes, testInvalidSigningSig, publicKey)
 		require.ErrorIs(t, err, ErrSignatureInvalid)
 	})
 }

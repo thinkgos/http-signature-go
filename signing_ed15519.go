@@ -19,7 +19,7 @@ func (m *SigningMethodEd25519) Alg() string {
 
 // Verify implements token verification for the SigningMethod.
 // For this verify method, key must be an ed25519.PublicKey
-func (m *SigningMethodEd25519) Verify(signingString string, sig []byte, key any) error {
+func (m *SigningMethodEd25519) Verify(signingBytes, sig []byte, key any) error {
 	ed25519Key, ok := key.(ed25519.PublicKey)
 	if !ok {
 		return ErrKeyTypeInvalid
@@ -29,7 +29,7 @@ func (m *SigningMethodEd25519) Verify(signingString string, sig []byte, key any)
 	}
 
 	// Verify the signature
-	if !ed25519.Verify(ed25519Key, []byte(signingString), sig) {
+	if !ed25519.Verify(ed25519Key, signingBytes, sig) {
 		return ErrSignatureInvalid
 	}
 	return nil
@@ -37,7 +37,7 @@ func (m *SigningMethodEd25519) Verify(signingString string, sig []byte, key any)
 
 // Sign implements token signing for the SigningMethod.
 // For this signing method, key must be an ed25519.PrivateKey
-func (m *SigningMethodEd25519) Sign(signingString string, key any) ([]byte, error) {
+func (m *SigningMethodEd25519) Sign(signingBytes []byte, key any) ([]byte, error) {
 	ed25519Key, ok := key.(crypto.Signer)
 	if !ok {
 		return nil, ErrKeyTypeInvalid
@@ -50,7 +50,7 @@ func (m *SigningMethodEd25519) Sign(signingString string, key any) ([]byte, erro
 	// Sign the string and return the result. ed25519 performs a two-pass hash
 	// as part of its algorithm. Therefore, we need to pass a non-prehashed
 	// message into the Sign function, as indicated by crypto.Hash(0)
-	sig, err := ed25519Key.Sign(rand.Reader, []byte(signingString), crypto.Hash(0))
+	sig, err := ed25519Key.Sign(rand.Reader, signingBytes, crypto.Hash(0))
 	if err != nil {
 		return nil, err
 	}

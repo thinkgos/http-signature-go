@@ -23,7 +23,7 @@ func (m *SigningMethodHMAC) Alg() string { return m.Name }
 
 // Verify implements verification for the SigningMethod. Returns nil if
 // the signature is valid. Key must be []byte.
-func (m *SigningMethodHMAC) Verify(signingString string, sig []byte, key any) error {
+func (m *SigningMethodHMAC) Verify(signingBytes, sig []byte, key any) error {
 	keyBytes, ok := key.([]byte)
 	if !ok {
 		return ErrKeyTypeInvalid
@@ -36,7 +36,7 @@ func (m *SigningMethodHMAC) Verify(signingString string, sig []byte, key any) er
 	// by reproducing the signature from the signing string and key, then
 	// comparing that against the provided signature.
 	hasher := hmac.New(m.Hash.New, keyBytes)
-	hasher.Write([]byte(signingString))
+	hasher.Write(signingBytes)
 	if !hmac.Equal(sig, hasher.Sum(nil)) {
 		return ErrSignatureInvalid
 	}
@@ -45,7 +45,7 @@ func (m *SigningMethodHMAC) Verify(signingString string, sig []byte, key any) er
 }
 
 // Sign implements signing for the SigningMethod. Key must be []byte.
-func (m *SigningMethodHMAC) Sign(signingString string, key any) ([]byte, error) {
+func (m *SigningMethodHMAC) Sign(signingBytes []byte, key any) ([]byte, error) {
 	keyBytes, ok := key.([]byte)
 	if !ok {
 		return nil, ErrKeyTypeInvalid
@@ -54,6 +54,6 @@ func (m *SigningMethodHMAC) Sign(signingString string, key any) ([]byte, error) 
 		return nil, ErrHashUnavailable
 	}
 	hasher := hmac.New(m.Hash.New, keyBytes)
-	hasher.Write([]byte(signingString))
+	hasher.Write(signingBytes)
 	return hasher.Sum(nil), nil
 }

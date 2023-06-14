@@ -24,7 +24,7 @@ func (m *SigningMethodRSA) Alg() string { return m.Name }
 
 // Verify implements token verification for the SigningMethod
 // For this signing method, must be an *rsa.PublicKey structure.
-func (m *SigningMethodRSA) Verify(signingString string, sig []byte, key any) error {
+func (m *SigningMethodRSA) Verify(signingBytes, sig []byte, key any) error {
 	rsaKey, ok := key.(*rsa.PublicKey)
 	if !ok {
 		return ErrKeyTypeInvalid
@@ -33,7 +33,7 @@ func (m *SigningMethodRSA) Verify(signingString string, sig []byte, key any) err
 		return ErrHashUnavailable
 	}
 	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
+	hasher.Write(signingBytes)
 	err := rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
 	if err != nil {
 		return ErrSignatureInvalid
@@ -43,7 +43,7 @@ func (m *SigningMethodRSA) Verify(signingString string, sig []byte, key any) err
 
 // Sign implements token signing for the SigningMethod
 // For this signing method, must be an *rsa.PrivateKey structure.
-func (m *SigningMethodRSA) Sign(signingString string, key any) ([]byte, error) {
+func (m *SigningMethodRSA) Sign(signingBytes []byte, key any) ([]byte, error) {
 	rsaKey, ok := key.(*rsa.PrivateKey)
 	if !ok {
 		return nil, ErrKeyTypeInvalid
@@ -53,6 +53,6 @@ func (m *SigningMethodRSA) Sign(signingString string, key any) ([]byte, error) {
 	}
 
 	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
+	hasher.Write(signingBytes)
 	return rsa.SignPKCS1v15(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil))
 }

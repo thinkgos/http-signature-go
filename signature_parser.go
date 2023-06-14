@@ -27,18 +27,30 @@ type Metadata struct {
 	Key    any
 }
 
+// Parser definition how to parse from http request.
 type Parser struct {
-	validators             []Validator
-	validatorCreated       ValidatorTimestamp
-	validatorExpires       ValidatorTimestamp
+	// validators: empty
+	validators []Validator
+	// CreatedValidator: CreatedValidator with gap 30 seconds.
+	validatorCreated ValidatorTimestamp
+	// validatorExpires: ExpiresValidator with gap 30 seconds.
+	validatorExpires ValidatorTimestamp
+	// minimumRequiredHeaders: empty
+	// use minimumRequiredHeaders1, if `algorithm` does not start with `rsa`,`hmac`, or `ecdsa`.
+	// use minimumRequiredHeaders2, if `algorithm` does start with `rsa`,`hmac`, or `ecdsa`.
 	minimumRequiredHeaders []string
-	extractor              Extractor
-	keystone               Keystone
+	// extractor: SignatureExtractor and AuthorizationSignatureExtractor.
+	extractor Extractor
+	// keystone: KeystoneMemory
+	// hold keyId mapping Metadata.
+	keystone Keystone
 	// hold flow fields.
 	mu              sync.RWMutex
 	signingRegistry map[string]func() SigningMethod
 }
 
+// NewParser new parser instance.
+// default value see Parser struct definition.
 func NewParser(opts ...ParserOption) *Parser {
 	p := &Parser{
 		validatorCreated: NewCreatedValidator(),
@@ -101,7 +113,14 @@ func (p *Parser) DeleteMetadata(keyId KeyId) error {
 	return p.keystone.DeleteMetadata(keyId)
 }
 
-func (p *Parser) Parse(r *http.Request) (Scheme, error) {
+// Parse parse from http request, and then validate all parameters.
+// Deprecated: use ParseFromRequest instead.
+func (p *Parser) Parser(r *http.Request) (Scheme, error) {
+	return p.ParseFromRequest(r)
+}
+
+// ParseFromRequest parse from http request, and then validate all parameters.
+func (p *Parser) ParseFromRequest(r *http.Request) (Scheme, error) {
 	s, scheme, err := p.extractor.Extract(r)
 	if err != nil {
 		return scheme, err
@@ -186,8 +205,8 @@ func (p *Parser) Parse(r *http.Request) (Scheme, error) {
 		metadata.Scheme != scheme {
 		return scheme, ErrSchemeUnsupported
 	}
-	method := p.GetSigningMethod(algorithm)
-	if method == nil {
+	signingMethod := p.GetSigningMethod(algorithm)
+	if signingMethod == nil {
 		return scheme, ErrAlgorithmUnsupported
 	}
 
@@ -196,7 +215,7 @@ func (p *Parser) Parse(r *http.Request) (Scheme, error) {
 		return scheme, ErrSignatureInvalid
 	}
 	signingString := ConstructSignMessageFromRequest(r, headers)
-	err = method.Verify(signingString, sig, metadata.Key)
+	err = signingMethod.Verify([]byte(signingString), sig, metadata.Key)
 	if err != nil {
 		return scheme, err
 	}
@@ -208,7 +227,7 @@ func (p *Parser) Parse(r *http.Request) (Scheme, error) {
 		Expires:   expires,
 		Headers:   headers,
 		Scheme:    scheme,
-		Method:    method,
+		Method:    signingMethod,
 		Key:       metadata.Key,
 	}
 	for _, v := range p.validators {

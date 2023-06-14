@@ -8,7 +8,7 @@ type SigningMethod interface {
 	// returns the alg identifier for this method.
 	Alg() string
 	// Returns nil if signature is valid
-	Verify(signingString string, sig []byte, key any) error
+	Verify(signingString []byte, sig []byte, key any) error
 	// Returns signature or error
-	Sign(signingString string, key any) ([]byte, error)
+	Sign(signingString []byte, key any) ([]byte, error)
 }

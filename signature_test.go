@@ -76,7 +76,7 @@ func TestSignature_EncodeDecode(t *testing.T) {
 		Key:    []byte("1234"),
 	})
 	require.NoError(t, err)
-	scheme, err := parser.Parse(r)
+	scheme, err := parser.ParseFromRequest(r)
 	require.NoError(t, err)
 	require.Equal(t, p1.Scheme, scheme)
 }

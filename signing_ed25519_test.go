@@ -13,14 +13,14 @@ func TestEd25519_Sign_Verify(t *testing.T) {
 		privateFile   string
 		publicFile    string
 		signingMethod SigningMethod
-		signingString string
+		signingString []byte
 	}{
 		{
 			"EdDSA",
 			"testdata/ed25519-private.pem",
 			"testdata/ed25519-public.pem",
 			SigningMethodEdDSA,
-			"http signature!!",
+			[]byte("http signature!!"),
 		},
 	}
 	for _, tt := range tests {
@@ -43,7 +43,7 @@ func TestEd25519_Sign_Verify(t *testing.T) {
 }
 
 func TestEd25519(t *testing.T) {
-	testSigningString := "testEd25519"
+	testSigningBytes := []byte("testEd25519")
 	testSigningSig := []byte("testEd25519Sig")
 	testInvalidKey := "invalidEd25519Key"
 
@@ -53,13 +53,13 @@ func TestEd25519(t *testing.T) {
 	publicKey, _ := ParseEdPublicKeyFromPEM(publicKeyData)
 
 	t.Run("invalid key type", func(t *testing.T) {
-		_, err := SigningMethodEdDSA.Sign(testSigningString, testInvalidKey)
+		_, err := SigningMethodEdDSA.Sign(testSigningBytes, testInvalidKey)
 		require.ErrorIs(t, err, ErrKeyTypeInvalid)
-		err = SigningMethodEdDSA.Verify(testSigningString, testSigningSig, testInvalidKey)
+		err = SigningMethodEdDSA.Verify(testSigningBytes, testSigningSig, testInvalidKey)
 		require.ErrorIs(t, err, ErrKeyTypeInvalid)
 	})
 	t.Run("invalid signature", func(t *testing.T) {
-		err := SigningMethodEdDSA.Verify(testSigningString, testSigningSig, publicKey)
+		err := SigningMethodEdDSA.Verify(testSigningBytes, testSigningSig, publicKey)
 		require.ErrorIs(t, err, ErrSignatureInvalid)
 	})
 }

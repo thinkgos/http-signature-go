@@ -77,7 +77,7 @@ func (p *Parameter) MergerHeader(r *http.Request) error {
 	}
 	p.Algorithm = p.Method.Alg()
 	signString := ConstructSignMessageFromRequest(r, p.Headers)
-	signature, err := p.Method.Sign(signString, p.Key)
+	signature, err := p.Method.Sign([]byte(signString), p.Key)
 	if err != nil {
 		return err
 	}

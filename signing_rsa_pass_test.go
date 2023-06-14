@@ -20,25 +20,26 @@ func TestRSAPSS_Sign_Verify(t *testing.T) {
 		t.Errorf("Unable to parse RSA public key: %v", err)
 	}
 
+	rsaPssTestSigningBytes := []byte("http signature!!")
 	tests := []struct {
 		name          string
 		signingMethod SigningMethod
-		signingString string
+		signingString []byte
 	}{
 		{
 			"rsa-pss-sha256",
 			SigningMethodRsaPssSha256,
-			"http signature!!",
+			rsaPssTestSigningBytes,
 		},
 		{
 			"rsa-pss-sha384",
 			SigningMethodRsaPssSha384,
-			"http signature!!",
+			rsaPssTestSigningBytes,
 		},
 		{
 			"rsa-pss-sha512",
 			SigningMethodRsaPssSha512,
-			"http signature!!",
+			rsaPssTestSigningBytes,
 		},
 	}
 
@@ -52,7 +53,7 @@ func TestRSAPSS_Sign_Verify(t *testing.T) {
 }
 
 func TestRsaPss(t *testing.T) {
-	testSigningString := "testRsaPss"
+	testSigningBytes := []byte("testRsaPss")
 	testSigningSig := []byte("testRsaPssSig")
 	testInvalidKey := "invalidKey"
 
@@ -62,9 +63,9 @@ func TestRsaPss(t *testing.T) {
 	publicKey, _ := ParseRSAPublicKeyFromPEM(publicKeyData)
 
 	t.Run("invalid key type", func(t *testing.T) {
-		_, err := SigningMethodRsaPssSha256.Sign(testSigningString, testInvalidKey)
+		_, err := SigningMethodRsaPssSha256.Sign(testSigningBytes, testInvalidKey)
 		require.ErrorIs(t, err, ErrKeyTypeInvalid)
-		err = SigningMethodRsaPssSha256.Verify(testSigningString, testSigningSig, testInvalidKey)
+		err = SigningMethodRsaPssSha256.Verify(testSigningBytes, testSigningSig, testInvalidKey)
 		require.ErrorIs(t, err, ErrKeyTypeInvalid)
 	})
 	t.Run("hash unavailable", func(t *testing.T) {
@@ -74,13 +75,13 @@ func TestRsaPss(t *testing.T) {
 				Hash: 255,
 			},
 		}
-		_, err := unavailableSigningMethod.Sign(testSigningString, privateKey)
+		_, err := unavailableSigningMethod.Sign(testSigningBytes, privateKey)
 		require.ErrorIs(t, err, ErrHashUnavailable)
-		err = unavailableSigningMethod.Verify(testSigningString, testSigningSig, publicKey)
+		err = unavailableSigningMethod.Verify(testSigningBytes, testSigningSig, publicKey)
 		require.ErrorIs(t, err, ErrHashUnavailable)
 	})
 	t.Run("invalid signature", func(t *testing.T) {
-		err := SigningMethodRsaPssSha256.Verify(testSigningString, testSigningSig, publicKey)
+		err := SigningMethodRsaPssSha256.Verify(testSigningBytes, testSigningSig, publicKey)
 		require.ErrorIs(t, err, ErrSignatureInvalid)
 	})
 }
