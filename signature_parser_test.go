@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/things-go/http-signautre-go/digest"
+	"github.com/things-go/http-signature-go/digest"
 )
 
 /*************************  sha256 signing method for testing *****************/

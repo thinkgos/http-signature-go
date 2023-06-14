@@ -1,4 +1,4 @@
-module github.com/things-go/http-signautre-go
+module github.com/things-go/http-signature-go
 
 go 1.20
 
