@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"crypto"
-	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"io"
@@ -37,7 +36,7 @@ func (m *DigestHash) SignReader(r io.Reader) (string, error) {
 		return "", ErrHashUnavailable
 	}
 	rd := bufio.NewReader(r)
-	hasher := sha256.New()
+	hasher := m.Hash.New()
 	_, err := io.Copy(hasher, rd)
 	if err != nil {
 		return "", err
