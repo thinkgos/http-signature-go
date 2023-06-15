@@ -50,7 +50,7 @@ func TestSignatureParameter(t *testing.T) {
 	require.Equal(t, p.Algorithm, p.Method.Alg())
 
 	want := fmt.Sprintf(`Signature keyId="key_id_1",algorithm="hmac-sha256",created=%d,expires=%d,headers="(request-target) (created) nonce",signature="%s"`, tm, tm, p.Signature) //nolint: lll
-	require.Equal(t, want, r.Header.Get(HeaderAuthorizationHeader))
+	require.Equal(t, want, r.Header.Get(HeaderAuthorization))
 	require.Equal(t, wantCreatedHeader, r.Header.Get(Created))
 	require.Equal(t, wantNonce, r.Header.Get(Nonce))
 }

@@ -59,17 +59,17 @@ const (
 
 func newAuthorizationHeader(s string) http.Header {
 	return http.Header{
-		HeaderAuthorizationHeader: []string{s},
+		HeaderAuthorization: []string{s},
 	}
 }
 
 // `(request-target)`, `(created)`, `(expires)`
 func newAuthorizationHeader1(s string) http.Header {
 	return http.Header{
-		HeaderAuthorizationHeader: []string{s},
-		RequestTarget:             []string{sampleRequestTarget},
-		Created:                   []string{sampleTimestampStr},
-		Expires:                   []string{sampleTimestampStr},
+		HeaderAuthorization: []string{s},
+		RequestTarget:       []string{sampleRequestTarget},
+		Created:             []string{sampleTimestampStr},
+		Expires:             []string{sampleTimestampStr},
 	}
 }
 
@@ -77,9 +77,9 @@ func newAuthorizationHeader1(s string) http.Header {
 // invalid created value
 func newAuthorizationHeader1InvalidCreated(s string) http.Header {
 	return http.Header{
-		HeaderAuthorizationHeader: []string{s},
-		RequestTarget:             []string{sampleRequestTarget},
-		Created:                   []string{sampleTimestampInvalid},
+		HeaderAuthorization: []string{s},
+		RequestTarget:       []string{sampleRequestTarget},
+		Created:             []string{sampleTimestampInvalid},
 	}
 }
 
@@ -87,19 +87,19 @@ func newAuthorizationHeader1InvalidCreated(s string) http.Header {
 // invalid expires value
 func newAuthorizationHeader1InvalidExpires(s string) http.Header {
 	return http.Header{
-		HeaderAuthorizationHeader: []string{s},
-		RequestTarget:             []string{sampleRequestTarget},
-		Created:                   []string{sampleTimestampStr},
-		Expires:                   []string{sampleTimestampInvalid},
+		HeaderAuthorization: []string{s},
+		RequestTarget:       []string{sampleRequestTarget},
+		Created:             []string{sampleTimestampStr},
+		Expires:             []string{sampleTimestampInvalid},
 	}
 }
 
 // `(request-target)`, `(date)`
 func newAuthorizationHeader2(s string) http.Header {
 	return http.Header{
-		HeaderAuthorizationHeader: []string{s},
-		RequestTarget:             []string{sampleRequestTarget},
-		Date:                      []string{sampleDate},
+		HeaderAuthorization: []string{s},
+		RequestTarget:       []string{sampleRequestTarget},
+		Date:                []string{sampleDate},
 	}
 }
 
@@ -115,7 +115,7 @@ func newTestParser(vs ...Validator) (*Parser, error) {
 	parser := NewParser(
 		WithExtractor(NewMultiExtractor(
 			NewSignatureExtractor(HeaderSignature),
-			NewAuthorizationSignatureExtractor(HeaderAuthorizationHeader),
+			NewAuthorizationSignatureExtractor(HeaderAuthorization),
 		)),
 		WithValidators(vs...),
 		WithKeystone(NewKeystoneMemory()),

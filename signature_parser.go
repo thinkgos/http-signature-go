@@ -51,7 +51,7 @@ func NewParser(opts ...ParserOption) *Parser {
 	p := &Parser{
 		extractor: NewMultiExtractor(
 			NewSignatureExtractor(HeaderSignature),
-			NewAuthorizationSignatureExtractor(HeaderAuthorizationHeader),
+			NewAuthorizationSignatureExtractor(HeaderAuthorization),
 		),
 		keystone:        NewKeystoneMemory(),
 		signingRegistry: make(map[string]func() SigningMethod),

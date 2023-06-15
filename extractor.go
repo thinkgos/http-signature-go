@@ -41,7 +41,7 @@ func NewAuthorizationSignatureExtractor(h string) AuthorizationSignatureExtracto
 func (h AuthorizationSignatureExtractor) Extract(r *http.Request) (string, Scheme, error) {
 	s := r.Header.Get(string(h))
 	if s != "" {
-		after, b := strings.CutPrefix(s, authorizationHeaderInitPrefix)
+		after, b := strings.CutPrefix(s, headerValueAuthorizationInitPrefix)
 		if b {
 			return after, SchemeAuthentication, nil
 		}

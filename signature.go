@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	HeaderAuthorizationHeader = "Authorization"
-	HeaderSignature           = "Signature"
+	HeaderAuthorization = "Authorization"
+	HeaderSignature     = "Signature"
 
-	authorizationHeaderInitPrefix = "Signature "
+	headerValueAuthorizationInitPrefix = "Signature "
 )
 
 const (
@@ -109,8 +109,8 @@ func (p *Parameter) MergerHeader(r *http.Request) error {
 	b := strings.Builder{}
 	hd := HeaderSignature
 	if p.Scheme == SchemeAuthentication {
-		hd = HeaderAuthorizationHeader
-		b.WriteString(authorizationHeaderInitPrefix)
+		hd = HeaderAuthorization
+		b.WriteString(headerValueAuthorizationInitPrefix)
 	}
 	b.WriteString(fmt.Sprintf(`keyId="%s",`, p.KeyId))
 	b.WriteString(fmt.Sprintf(`algorithm="%s",`, p.Algorithm))
