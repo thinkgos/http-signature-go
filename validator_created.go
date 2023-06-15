@@ -1,6 +1,7 @@
 package httpsign
 
 import (
+	"net/http"
 	"time"
 )
 
@@ -19,11 +20,13 @@ func NewCreatedValidator() *CreatedValidator {
 }
 
 // Validate return error when checking if header date is valid or not
-func (v *CreatedValidator) ValidateTimestamp(created int64) error {
-	st := time.Now().Unix()
-	sec := int64(v.Gap / time.Second)
-	if dt := st - created; dt < -sec || dt > sec {
-		return ErrCreatedNotInRange
+func (v *CreatedValidator) Validate(r *http.Request, p *Parameter) error {
+	if p.ContainsHeader(CreatedHeader) {
+		st := time.Now().Unix()
+		sec := int64(v.Gap / time.Second)
+		if dt := st - p.Created; dt < -sec || dt > sec {
+			return ErrCreatedNotInRange
+		}
 	}
 	return nil
 }

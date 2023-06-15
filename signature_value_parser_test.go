@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParser(t *testing.T) {
+func TestParserSignatureValue(t *testing.T) {
 	tests := []struct {
 		name   string
 		input  string

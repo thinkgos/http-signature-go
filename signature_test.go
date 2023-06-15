@@ -64,11 +64,7 @@ func TestSignature_EncodeDecode(t *testing.T) {
 	parser := NewParser(
 		WithMinimumRequiredHeaders([]string{RequestTargetHeader, CreatedHeader, HostHeader}),
 		WithSigningMethods(SigningMethodHmacSha256.Alg(), func() SigningMethod { return SigningMethodHmacSha256 }),
-		WithValidatorCreated(&timestampAlwaysValid{}),
-		WithValidators(&mockParameterValid{
-			wantParameter: p1,
-			t:             t,
-		}),
+		WithValidators(&createdAlwaysValid{}),
 	)
 	err = parser.AddMetadata("key_id_1", Metadata{
 		Scheme: SchemeUnspecified,
@@ -76,7 +72,18 @@ func TestSignature_EncodeDecode(t *testing.T) {
 		Key:    []byte("1234"),
 	})
 	require.NoError(t, err)
-	scheme, err := parser.ParseFromRequest(r)
+	gotParam, err := parser.ParseFromRequest(r)
 	require.NoError(t, err)
-	require.Equal(t, p1.Scheme, scheme)
+	require.Equal(t, p1.KeyId, gotParam.KeyId)
+	require.Equal(t, p1.Signature, gotParam.Signature)
+	require.Equal(t, p1.Algorithm, gotParam.Algorithm)
+	require.Equal(t, p1.Created, gotParam.Created)
+	require.Equal(t, p1.Expires, gotParam.Expires)
+	require.Equal(t, p1.Headers, gotParam.Headers)
+	require.Equal(t, p1.Scheme, gotParam.Scheme)
+
+	err = parser.Verify(r, gotParam)
+	require.NoError(t, err)
+	require.Equal(t, p1.Method, gotParam.Method)
+	require.Equal(t, p1.Key, gotParam.Key)
 }

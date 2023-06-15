@@ -1,6 +1,8 @@
 package httpsign
 
 import (
+	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -11,7 +13,7 @@ func Test_Validator_Created(t *testing.T) {
 	now := time.Now().Unix()
 	tests := []struct {
 		name      string
-		validator ValidatorTimestamp
+		validator Validator
 		time      int64
 		wantErr   error
 	}{
@@ -36,7 +38,11 @@ func Test_Validator_Created(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.validator.ValidateTimestamp(tt.time)
+			r, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
+			err := tt.validator.Validate(r, &Parameter{
+				Created: tt.time,
+				Headers: []string{CreatedHeader},
+			})
 			require.Equal(t, tt.wantErr, err)
 		})
 	}

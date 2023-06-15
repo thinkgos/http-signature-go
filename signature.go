@@ -69,6 +69,22 @@ type Parameter struct {
 	Method SigningMethod
 	// signing method key.
 	Key any
+
+	// inner values
+	headerMap map[string]struct{}
+}
+
+// ContainsHeader returns true if headers contains header.
+// NOTE: init inner headerMap use header when first called this function.
+func (p *Parameter) ContainsHeader(header string) bool {
+	if p.headerMap == nil {
+		p.headerMap = make(map[string]struct{}, len(p.Headers))
+		for _, hd := range p.Headers {
+			p.headerMap[hd] = struct{}{}
+		}
+	}
+	_, ok := p.headerMap[header]
+	return ok
 }
 
 func (p *Parameter) MergerHeader(r *http.Request) error {

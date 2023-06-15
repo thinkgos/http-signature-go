@@ -31,10 +31,6 @@ type Metadata struct {
 type Parser struct {
 	// validators: empty
 	validators []Validator
-	// CreatedValidator: CreatedValidator with gap 30 seconds.
-	validatorCreated ValidatorTimestamp
-	// validatorExpires: ExpiresValidator with gap 30 seconds.
-	validatorExpires ValidatorTimestamp
 	// minimumRequiredHeaders: empty
 	// use minimumRequiredHeaders1, if `algorithm` does not start with `rsa`,`hmac`, or `ecdsa`.
 	// use minimumRequiredHeaders2, if `algorithm` does start with `rsa`,`hmac`, or `ecdsa`.
@@ -53,8 +49,6 @@ type Parser struct {
 // default value see Parser struct definition.
 func NewParser(opts ...ParserOption) *Parser {
 	p := &Parser{
-		validatorCreated: NewCreatedValidator(),
-		validatorExpires: NewExpiresValidator(),
 		extractor: NewMultiExtractor(
 			NewSignatureExtractor(SignatureHeader),
 			NewAuthorizationSignatureExtractor(AuthorizationHeader),
@@ -113,29 +107,22 @@ func (p *Parser) DeleteMetadata(keyId KeyId) error {
 	return p.keystone.DeleteMetadata(keyId)
 }
 
-// Parse parse from http request, and then validate all parameters.
-// Deprecated: use ParseFromRequest instead.
-func (p *Parser) Parser(r *http.Request) (Scheme, error) {
-	return p.ParseFromRequest(r)
-}
-
-// ParseFromRequest parse from http request, and then validate all parameters.
-func (p *Parser) ParseFromRequest(r *http.Request) (Scheme, error) {
+func (p *Parser) ParseFromRequest(r *http.Request) (*Parameter, error) {
 	s, scheme, err := p.extractor.Extract(r)
 	if err != nil {
-		return scheme, err
+		return nil, err
 	}
 	results, err := parseSignatureValue(s)
 	if err != nil {
-		return scheme, err
+		return nil, err
 	}
 	keyId, ok := results[signingKeyId]
 	if !ok {
-		return scheme, ErrKeyIdMissing
+		return nil, ErrKeyIdMissing
 	}
 	signature, ok := results[signingSignature]
 	if !ok {
-		return scheme, ErrSignatureMissing
+		return nil, ErrSignatureMissing
 	}
 	algorithm := results[signingAlgorithm]
 
@@ -150,76 +137,45 @@ func (p *Parser) ParseFromRequest(r *http.Request) (Scheme, error) {
 	} else {
 		headers = strings.Split(headerString, " ")
 	}
-	if !p.isMeetMinimumRequiredHeader(algorithm, headers) {
-		return scheme, ErrMinimumRequiredHeader
+	// headers to map
+	headerMap := make(map[string]struct{}, len(headers))
+	for _, hd := range headers {
+		headerMap[hd] = struct{}{}
 	}
+
 	created := int64(0)
-	if slices.Contains(headers, CreatedHeader) {
+	if _, ok := headerMap[CreatedHeader]; ok {
 		createdHeader, err := strconv.ParseInt(r.Header.Get(CreatedHeader), 10, 64)
 		if err != nil {
-			return scheme, ErrCreatedInvalid
+			return nil, ErrCreatedInvalid
 		}
 		if s := results[signingCreated]; s != "" {
 			created, err = strconv.ParseInt(s, 10, 64)
 			if err != nil {
-				return scheme, ErrCreatedInvalid
+				return nil, ErrCreatedInvalid
 			}
 			if created != createdHeader {
-				return scheme, ErrCreatedMismatch
+				return nil, ErrCreatedMismatch
 			}
-		}
-		err = p.validatorCreated.ValidateTimestamp(created)
-		if err != nil {
-			return scheme, err
 		}
 	}
 	expires := int64(0)
-	if slices.Contains(headers, ExpiresHeader) {
+	if _, ok := headerMap[ExpiresHeader]; ok {
 		expiresHeader, err := strconv.ParseInt(r.Header.Get(ExpiresHeader), 10, 64)
 		if err != nil {
-			return scheme, ErrExpiresInvalid
+			return nil, ErrExpiresInvalid
 		}
 		if s := results[signingExpires]; s != "" {
 			expires, err = strconv.ParseInt(s, 10, 64)
 			if err != nil {
-				return scheme, ErrExpiresInvalid
+				return nil, ErrExpiresInvalid
 			}
 			if expires != expiresHeader {
-				return scheme, ErrExpiresMismatch
+				return nil, ErrExpiresMismatch
 			}
 		}
-		err = p.validatorExpires.ValidateTimestamp(expires)
-		if err != nil {
-			return scheme, err
-		}
 	}
-
-	metadata, err := p.GetMetadata(KeyId(keyId))
-	if err != nil {
-		return scheme, ErrKeyIdInvalid
-	}
-	if metadata.Alg != algorithm {
-		return scheme, ErrAlgorithmMismatch
-	}
-	if metadata.Scheme != SchemeUnspecified &&
-		metadata.Scheme != scheme {
-		return scheme, ErrSchemeUnsupported
-	}
-	signingMethod := p.GetSigningMethod(algorithm)
-	if signingMethod == nil {
-		return scheme, ErrAlgorithmUnsupported
-	}
-
-	sig, err := base64.StdEncoding.DecodeString(signature)
-	if err != nil {
-		return scheme, ErrSignatureInvalid
-	}
-	signingString := ConstructSignMessageFromRequest(r, headers)
-	err = signingMethod.Verify([]byte(signingString), sig, metadata.Key)
-	if err != nil {
-		return scheme, err
-	}
-	parameter := &Parameter{
+	return &Parameter{
 		KeyId:     KeyId(keyId),
 		Signature: signature,
 		Algorithm: algorithm,
@@ -227,15 +183,60 @@ func (p *Parser) ParseFromRequest(r *http.Request) (Scheme, error) {
 		Expires:   expires,
 		Headers:   headers,
 		Scheme:    scheme,
-		Method:    signingMethod,
-		Key:       metadata.Key,
+		Method:    nil,
+		Key:       nil,
+		headerMap: headerMap,
+	}, nil
+}
+
+// Verify Parameter.
+// return nil, if successful. then it will set Parameter signing Method and signing Method Key.
+func (p *Parser) Verify(r *http.Request, param *Parameter) error {
+	if !p.isMeetMinimumRequiredHeader(param) {
+		return ErrMinimumRequiredHeader
 	}
+	metadata, err := p.GetMetadata(param.KeyId)
+	if err != nil {
+		return ErrKeyIdInvalid
+	}
+	if metadata.Alg != param.Algorithm {
+		return ErrAlgorithmMismatch
+	}
+	if metadata.Scheme != SchemeUnspecified &&
+		metadata.Scheme != param.Scheme {
+		return ErrSchemeUnsupported
+	}
+	signingMethod := p.GetSigningMethod(param.Algorithm)
+	if signingMethod == nil {
+		return ErrAlgorithmUnsupported
+	}
+
+	sig, err := base64.StdEncoding.DecodeString(param.Signature)
+	if err != nil {
+		return ErrSignatureInvalid
+	}
+	signingString := ConstructSignMessageFromRequest(r, param.Headers)
+	err = signingMethod.Verify([]byte(signingString), sig, metadata.Key)
+	if err != nil {
+		return err
+	}
+	param.Method = signingMethod
+	param.Key = metadata.Key
 	for _, v := range p.validators {
-		if err := v.Validate(r, parameter); err != nil {
-			return scheme, err
+		if err := v.Validate(r, param); err != nil {
+			return err
 		}
 	}
-	return scheme, nil
+	return nil
+}
+
+// ParseVerify parse from http request, and then validate all parameters.
+func (p *Parser) ParseVerify(r *http.Request) (Scheme, error) {
+	param, err := p.ParseFromRequest(r)
+	if err != nil {
+		return SchemeUnspecified, err
+	}
+	return param.Scheme, p.Verify(r, param)
 }
 
 // isMeetMinimumRequiredHeader check if all server required header is in header list
@@ -243,21 +244,17 @@ func (p *Parser) ParseFromRequest(r *http.Request) (Scheme, error) {
 // `(created)` header fields if `algorithm` does not start with `rsa`,
 // `hmac`, or `ecdsa`. Otherwise, `(request-target)` and `date` SHOULD
 // be included in the signature.
-func (p *Parser) isMeetMinimumRequiredHeader(alg string, headers []string) bool {
+func (p *Parser) isMeetMinimumRequiredHeader(param *Parameter) bool {
 	minimumRequiredHeaders := p.minimumRequiredHeaders
 	if len(p.minimumRequiredHeaders) == 0 {
-		if isSpecifyAlg(alg) {
+		if isSpecifyAlg(param.Algorithm) {
 			minimumRequiredHeaders = minimumRequiredHeaders2
 		} else {
 			minimumRequiredHeaders = minimumRequiredHeaders1
 		}
 	}
-	mp := make(map[string]struct{}, len(headers))
-	for _, h := range headers {
-		mp[h] = struct{}{}
-	}
-	for _, h := range minimumRequiredHeaders {
-		if _, ok := mp[h]; !ok {
+	for _, hd := range minimumRequiredHeaders {
+		if !param.ContainsHeader(hd) {
 			return false
 		}
 	}

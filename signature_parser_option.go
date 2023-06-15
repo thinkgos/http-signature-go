@@ -14,18 +14,6 @@ func WithValidators(vs ...Validator) ParserOption {
 	}
 }
 
-func WithValidatorCreated(v ValidatorTimestamp) ParserOption {
-	return func(p *Parser) {
-		p.validatorCreated = v
-	}
-}
-
-func WithValidatorExpires(v ValidatorTimestamp) ParserOption {
-	return func(p *Parser) {
-		p.validatorExpires = v
-	}
-}
-
 func WithExtractor(e Extractor) ParserOption {
 	return func(p *Parser) {
 		p.extractor = e

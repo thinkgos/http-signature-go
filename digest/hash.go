@@ -2,6 +2,7 @@ package digest
 
 import (
 	"bufio"
+	"bytes"
 	"crypto"
 	"crypto/sha256"
 	"encoding/base64"
@@ -28,12 +29,7 @@ type DigestHash struct {
 func (m *DigestHash) Alg() string { return m.Name }
 
 func (m *DigestHash) Sign(p []byte) (string, error) {
-	if !m.Hash.Available() {
-		return "", ErrHashUnavailable
-	}
-	hasher := sha256.New()
-	hasher.Write(p)
-	return m.Name + "=" + base64.StdEncoding.EncodeToString(hasher.Sum(nil)), nil
+	return m.SignReader(bytes.NewReader(p))
 }
 
 func (m *DigestHash) SignReader(r io.Reader) (string, error) {
@@ -47,4 +43,19 @@ func (m *DigestHash) SignReader(r io.Reader) (string, error) {
 		return "", err
 	}
 	return m.Name + "=" + base64.StdEncoding.EncodeToString(hasher.Sum(nil)), nil
+}
+
+func (m *DigestHash) Verify(p []byte, sig string) error {
+	return m.VerifyReader(bytes.NewReader(p), sig)
+}
+
+func (m *DigestHash) VerifyReader(r io.Reader, sig string) error {
+	s, err := m.SignReader(r)
+	if err != nil {
+		return err
+	}
+	if s != sig {
+		return ErrSignature
+	}
+	return nil
 }
