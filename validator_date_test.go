@@ -61,12 +61,12 @@ func Test_Validator_Date(t *testing.T) {
 			wantErr:    ErrDateInvalid,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
 			r, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
-			r.Header.Set(DateHeader, tt.time.UTC().Format(tt.timeFormat)) // should be UTC time
-			err := tt.validator.Validate(r, &Parameter{})
-			require.Equal(t, tt.wantErr, err)
+			r.Header.Set(DateHeader, tc.time.UTC().Format(tc.timeFormat)) // should be UTC time
+			err := tc.validator.Validate(r, &Parameter{})
+			require.Equal(t, tc.wantErr, err)
 		})
 	}
 }

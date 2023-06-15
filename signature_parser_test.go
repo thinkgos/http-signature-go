@@ -57,27 +57,6 @@ const (
 	sampleTimestampInvalid = "aa"
 )
 
-// mock interface always return true
-type dateAlwaysValid struct{}
-
-func (v *dateAlwaysValid) Validate(r *http.Request, _ *Parameter) error { return nil }
-
-// mock interface always return true
-type createdAlwaysValid struct{}
-
-func (v *createdAlwaysValid) Validate(r *http.Request, _ *Parameter) error { return nil }
-
-// mock interface always return true
-type expiresAlwaysValid struct{}
-
-func (v *expiresAlwaysValid) Validate(r *http.Request, _ *Parameter) error { return nil }
-
-var mockValidator = []Validator{
-	&dateAlwaysValid{},
-	&createdAlwaysValid{},
-	&expiresAlwaysValid{},
-}
-
 func newAuthorizationHeader(s string) http.Header {
 	return http.Header{
 		AuthorizationHeader: []string{s},
@@ -132,13 +111,13 @@ func newSignatureHeader(s string) http.Header {
 	}
 }
 
-func newTestParser() (*Parser, error) {
+func newTestParser(vs ...Validator) (*Parser, error) {
 	parser := NewParser(
-		WithValidators(mockValidator...),
 		WithExtractor(NewMultiExtractor(
 			NewSignatureExtractor(SignatureHeader),
 			NewAuthorizationSignatureExtractor(AuthorizationHeader),
 		)),
+		WithValidators(vs...),
 		WithKeystone(NewKeystoneMemory()),
 		WithSigningMethods("hmac-sha256", func() SigningMethod { return SigningMethodHmacSha512 }),
 		WithSigningMethods("sha256", func() SigningMethod { return testSigningMethodSha256 }),
