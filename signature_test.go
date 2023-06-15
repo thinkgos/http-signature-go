@@ -16,30 +16,43 @@ type timeAlwaysValid struct{}
 
 func (v *timeAlwaysValid) Validate(r *http.Request, _ *Parameter) error { return nil }
 
+func TestSignatureInvalidMethode(t *testing.T) {
+	r, err := http.NewRequestWithContext(context.Background(), "GET", "/", nil)
+	require.NoError(t, err)
+
+	p := &Parameter{}
+	err = p.MergerHeader(r)
+	require.Equal(t, ErrAlgorithmMismatch, err)
+}
+
 func TestSignatureParameter(t *testing.T) {
 	r, err := http.NewRequestWithContext(context.Background(), "GET", "/", nil)
 	require.NoError(t, err)
 
+	tm := time.Now().Unix()
 	p := &Parameter{
 		KeyId:     "key_id_1",
 		Signature: "",
 		Algorithm: "",
-		Created:   sampleTimestamp,
-		Expires:   0,
-		Headers:   []string{RequestTargetHeader, CreatedHeader},
-		Scheme:    SchemeSignature,
+		Created:   tm,
+		Expires:   tm,
+		Headers:   []string{RequestTarget, Created, Nonce},
+		Scheme:    SchemeAuthentication,
 		Method:    SigningMethodHmacSha256,
 		Key:       []byte("1234"),
 	}
 	wantCreatedHeader := strconv.FormatInt(p.Created, 10)
-	r.Header.Set(CreatedHeader, wantCreatedHeader)
+	wantNonce := "123123"
+	r.Header.Set(Created, wantCreatedHeader)
+	r.Header.Set(Nonce, wantNonce)
 	err = p.MergerHeader(r)
 	require.NoError(t, err)
 	require.Equal(t, p.Algorithm, p.Method.Alg())
 
-	want := fmt.Sprintf(`keyId="key_id_1",algorithm="hmac-sha256",created=1686625874,headers="(request-target) (created)",signature="%s"`, p.Signature) //nolint: lll
-	require.Equal(t, want, r.Header.Get(SignatureHeader))
-	require.Equal(t, wantCreatedHeader, r.Header.Get(CreatedHeader))
+	want := fmt.Sprintf(`Signature keyId="key_id_1",algorithm="hmac-sha256",created=%d,expires=%d,headers="(request-target) (created) nonce",signature="%s"`, tm, tm, p.Signature) //nolint: lll
+	require.Equal(t, want, r.Header.Get(HeaderAuthorizationHeader))
+	require.Equal(t, wantCreatedHeader, r.Header.Get(Created))
+	require.Equal(t, wantNonce, r.Header.Get(Nonce))
 }
 
 func TestSignature_EncodeDecode_WithValidatorCreated(t *testing.T) {
@@ -52,24 +65,24 @@ func TestSignature_EncodeDecode_WithValidatorCreated(t *testing.T) {
 		Algorithm: "",
 		Created:   time.Now().Add(-time.Hour).UTC().Unix(),
 		Expires:   0,
-		Headers:   []string{RequestTargetHeader, CreatedHeader, HostHeader},
+		Headers:   []string{RequestTarget, Created, Host},
 		Scheme:    SchemeSignature,
 		Method:    SigningMethodHmacSha256,
 		Key:       []byte("1234"),
 	}
 	wantCreatedHeader := strconv.FormatInt(p1.Created, 10)
-	r.Header.Set(CreatedHeader, wantCreatedHeader)
+	r.Header.Set(Created, wantCreatedHeader)
 	err = p1.MergerHeader(r)
 	require.NoError(t, err)
 	require.Equal(t, p1.Algorithm, p1.Method.Alg())
 
 	want := fmt.Sprintf(`keyId="key_id_1",algorithm="hmac-sha256",created=%d,headers="(request-target) (created) host",signature="%s"`, p1.Created, p1.Signature) //nolint: lll
-	require.Equal(t, want, r.Header.Get(SignatureHeader))
-	require.Equal(t, wantCreatedHeader, r.Header.Get(CreatedHeader))
+	require.Equal(t, want, r.Header.Get(HeaderSignature))
+	require.Equal(t, wantCreatedHeader, r.Header.Get(Created))
 
 	// validate created always valid
 	parser1 := NewParser(
-		WithMinimumRequiredHeaders([]string{RequestTargetHeader, CreatedHeader, HostHeader}),
+		WithMinimumRequiredHeaders([]string{RequestTarget, Created, Host}),
 		WithSigningMethods(SigningMethodHmacSha256.Alg(), func() SigningMethod { return SigningMethodHmacSha256 }),
 		WithValidators(&timeAlwaysValid{}),
 	)
@@ -97,7 +110,7 @@ func TestSignature_EncodeDecode_WithValidatorCreated(t *testing.T) {
 	// validate created invalid.
 
 	parser2 := NewParser(
-		WithMinimumRequiredHeaders([]string{RequestTargetHeader, CreatedHeader, HostHeader}),
+		WithMinimumRequiredHeaders([]string{RequestTarget, Created, Host}),
 		WithSigningMethods(SigningMethodHmacSha256.Alg(), func() SigningMethod { return SigningMethodHmacSha256 }),
 		WithValidators(NewCreatedValidator()),
 	)

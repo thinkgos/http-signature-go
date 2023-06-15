@@ -4,19 +4,26 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
 const (
-	AuthorizationHeader           = "Authorization"
-	SignatureHeader               = "Signature"
-	RequestTargetHeader           = "(request-target)"
-	CreatedHeader                 = "(created)"
-	ExpiresHeader                 = "(expires)"
-	DateHeader                    = "date"
-	DigestHeader                  = "digest"
-	HostHeader                    = "host"
+	HeaderAuthorizationHeader = "Authorization"
+	HeaderSignature           = "Signature"
+
 	authorizationHeaderInitPrefix = "Signature "
+)
+
+const (
+	Date          = "date"
+	Digest        = "digest"
+	Host          = "host"
+	Nonce         = "nonce"
+	ContentLength = "content-length"
+	RequestTarget = "(request-target)"
+	Created       = "(created)"
+	Expires       = "(expires)"
 )
 
 const (
@@ -92,7 +99,7 @@ func (p *Parameter) MergerHeader(r *http.Request) error {
 		return ErrAlgorithmMismatch
 	}
 	p.Algorithm = p.Method.Alg()
-	signString := ConstructSignMessageFromRequest(r, p.Headers)
+	signString := ConstructSignMessageFromRequest(r, p)
 	signature, err := p.Method.Sign([]byte(signString), p.Key)
 	if err != nil {
 		return err
@@ -100,9 +107,9 @@ func (p *Parameter) MergerHeader(r *http.Request) error {
 	p.Signature = base64.StdEncoding.EncodeToString(signature)
 
 	b := strings.Builder{}
-	hd := SignatureHeader
+	hd := HeaderSignature
 	if p.Scheme == SchemeAuthentication {
-		hd = AuthorizationHeader
+		hd = HeaderAuthorizationHeader
 		b.WriteString(authorizationHeaderInitPrefix)
 	}
 	b.WriteString(fmt.Sprintf(`keyId="%s",`, p.KeyId))
@@ -119,15 +126,19 @@ func (p *Parameter) MergerHeader(r *http.Request) error {
 	return nil
 }
 
-func ConstructSignMessageFromRequest(r *http.Request, headers []string) string {
+func ConstructSignMessageFromRequest(r *http.Request, p *Parameter) string {
 	b := strings.Builder{}
-	for i, k := range headers {
+	for i, k := range p.Headers {
 		var v string
 		switch k {
-		case HostHeader:
+		case Host:
 			v = r.Host
-		case RequestTargetHeader:
+		case RequestTarget:
 			v = fmt.Sprintf("%s %s", strings.ToLower(r.Method), r.URL.RequestURI())
+		case Created:
+			v = strconv.FormatInt(p.Created, 10)
+		case Expires:
+			v = strconv.FormatInt(p.Expires, 10)
 		default:
 			v = strings.Join(r.Header.Values(k), ", ")
 		}
@@ -137,7 +148,7 @@ func ConstructSignMessageFromRequest(r *http.Request, headers []string) string {
 			v = " "
 		}
 		b.WriteString(fmt.Sprintf("%s: %s", k, v))
-		if i < len(headers)-1 {
+		if i < len(p.Headers)-1 {
 			b.WriteString("\n")
 		}
 	}

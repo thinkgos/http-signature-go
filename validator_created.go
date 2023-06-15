@@ -21,7 +21,7 @@ func NewCreatedValidator() *CreatedValidator {
 
 // Validate return error when checking if header date is valid or not
 func (v *CreatedValidator) Validate(r *http.Request, p *Parameter) error {
-	if p.ContainsHeader(CreatedHeader) {
+	if p.ContainsHeader(Created) {
 		st := time.Now().Unix()
 		sec := int64(v.Gap / time.Second)
 		if dt := st - p.Created; dt < -sec || dt > sec {

@@ -21,7 +21,7 @@ func NewExpiresValidator() *ExpiresValidator {
 
 // Validate return error when checking if header `expires` is valid or not
 func (v *ExpiresValidator) Validate(r *http.Request, p *Parameter) error {
-	if p.ContainsHeader(ExpiresHeader) {
+	if p.ContainsHeader(Expires) {
 		st := time.Now().Unix()
 		sec := int64(v.Gap / time.Second)
 		if p.Expires > st+sec {

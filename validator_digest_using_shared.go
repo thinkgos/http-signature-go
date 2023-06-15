@@ -26,7 +26,7 @@ func (v *DigestUsingSharedValidator) Validate(r *http.Request, p *Parameter) err
 	}
 	r.Body = io.NopCloser(bytes.NewBuffer(body))
 
-	headerDigest := r.Header.Get(DigestHeader)
+	headerDigest := r.Header.Get(Digest)
 	return NewDigestUsingShared(p.Method).
 		Verify(body, headerDigest, p.Key)
 }

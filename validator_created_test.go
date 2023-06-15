@@ -41,7 +41,7 @@ func Test_Validator_Created(t *testing.T) {
 			r, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 			err := tt.validator.Validate(r, &Parameter{
 				Created: tt.time,
-				Headers: []string{CreatedHeader},
+				Headers: []string{Created},
 			})
 			require.Equal(t, tt.wantErr, err)
 		})

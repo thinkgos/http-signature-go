@@ -15,9 +15,9 @@ import (
 // Otherwise, `(request-target)` and `date` SHOULD be included in the signature.
 var (
 	// if `algorithm` does not start with `rsa`,`hmac`, or `ecdsa`
-	minimumRequiredHeaders1 = []string{RequestTargetHeader, CreatedHeader}
+	minimumRequiredHeaders1 = []string{RequestTarget, Created}
 	// if `algorithm` does start with `rsa`,`hmac`, or `ecdsa`
-	minimumRequiredHeaders2 = []string{RequestTargetHeader, DateHeader}
+	minimumRequiredHeaders2 = []string{RequestTarget, Date}
 )
 
 // Metadata define key and algorithm that keyId use.
@@ -50,8 +50,8 @@ type Parser struct {
 func NewParser(opts ...ParserOption) *Parser {
 	p := &Parser{
 		extractor: NewMultiExtractor(
-			NewSignatureExtractor(SignatureHeader),
-			NewAuthorizationSignatureExtractor(AuthorizationHeader),
+			NewSignatureExtractor(HeaderSignature),
+			NewAuthorizationSignatureExtractor(HeaderAuthorizationHeader),
 		),
 		keystone:        NewKeystoneMemory(),
 		signingRegistry: make(map[string]func() SigningMethod),
@@ -144,34 +144,20 @@ func (p *Parser) ParseFromRequest(r *http.Request) (*Parameter, error) {
 	}
 
 	created := int64(0)
-	if _, ok := headerMap[CreatedHeader]; ok {
-		createdHeader, err := strconv.ParseInt(r.Header.Get(CreatedHeader), 10, 64)
-		if err != nil {
-			return nil, ErrCreatedInvalid
-		}
+	if _, ok := headerMap[Created]; ok {
 		if s := results[signingCreated]; s != "" {
 			created, err = strconv.ParseInt(s, 10, 64)
 			if err != nil {
 				return nil, ErrCreatedInvalid
 			}
-			if created != createdHeader {
-				return nil, ErrCreatedMismatch
-			}
 		}
 	}
 	expires := int64(0)
-	if _, ok := headerMap[ExpiresHeader]; ok {
-		expiresHeader, err := strconv.ParseInt(r.Header.Get(ExpiresHeader), 10, 64)
-		if err != nil {
-			return nil, ErrExpiresInvalid
-		}
+	if _, ok := headerMap[Expires]; ok {
 		if s := results[signingExpires]; s != "" {
 			expires, err = strconv.ParseInt(s, 10, 64)
 			if err != nil {
 				return nil, ErrExpiresInvalid
-			}
-			if expires != expiresHeader {
-				return nil, ErrExpiresMismatch
 			}
 		}
 	}
@@ -215,7 +201,7 @@ func (p *Parser) Verify(r *http.Request, param *Parameter) error {
 	if err != nil {
 		return ErrSignatureInvalid
 	}
-	signingString := ConstructSignMessageFromRequest(r, param.Headers)
+	signingString := ConstructSignMessageFromRequest(r, param)
 	err = signingMethod.Verify([]byte(signingString), sig, metadata.Key)
 	if err != nil {
 		return err

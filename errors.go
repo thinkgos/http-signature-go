@@ -25,16 +25,12 @@ var (
 	ErrDateInvalid = errors.New("date invalid in header")
 	// ErrDateNotInRange 'date' not in acceptable range.
 	ErrDateNotInRange = errors.New("date is not in acceptable range")
-	// ErrCreatedInvalid (created) invalid in header or parameter.
-	ErrCreatedInvalid = errors.New("(created) invalid in header or parameter")
-	// ErrCreatedMismatch '(created)' header and parameter mismatch.
-	ErrCreatedMismatch = errors.New("(created) header and parameter mismatch")
+	// ErrCreatedInvalid (created) invalid.
+	ErrCreatedInvalid = errors.New("(created) invalid")
 	// ErrCreatedNotInRange '(created)' not in acceptable range.
 	ErrCreatedNotInRange = errors.New("(created) is not in acceptable range")
-	// ErrExpiresInvalid (expires) invalid in header or parameter.
-	ErrExpiresInvalid = errors.New("(expires) invalid in header or parameter")
-	// ErrExpiresMismatch '(expires)' header and parameter mismatch.
-	ErrExpiresMismatch = errors.New("(expires) header and parameter mismatch")
+	// ErrExpiresInvalid (expires) invalid.
+	ErrExpiresInvalid = errors.New("(expires) invalid")
 	// ErrSignatureExpired '(expires)' has expired in header
 	ErrSignatureExpired = errors.New("signature has be expired")
 	// ErrSignatureInvalid signing string do not match

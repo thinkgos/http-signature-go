@@ -14,7 +14,7 @@ func Test_Validator_Digest(t *testing.T) {
 	t.Run("digest mismatch", func(t *testing.T) {
 		r, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/a", bytes.NewReader([]byte([]byte("hello world!!"))))
 
-		r.Header.Set(DigestHeader, "invalid body")
+		r.Header.Set(Digest, "invalid body")
 		err := NewDigestValidator(digest.DigestHashSha256).Validate(r, &Parameter{})
 		require.Equal(t, ErrDigestMismatch, err)
 	})
@@ -44,7 +44,7 @@ func Test_Validator_Digest(t *testing.T) {
 
 				bodyDigest, err := tt.digest.Sign(tt.body)
 				require.NoError(t, err)
-				r.Header.Set(DigestHeader, bodyDigest)
+				r.Header.Set(Digest, bodyDigest)
 				err = NewDigestValidator(tt.digest).Validate(r, &Parameter{})
 				require.Equal(t, tt.wantErr, err)
 			})

@@ -36,7 +36,7 @@ func Test_Validator_Expires(t *testing.T) {
 
 			err := tt.validator.Validate(r, &Parameter{
 				Expires: tt.time,
-				Headers: []string{ExpiresHeader},
+				Headers: []string{Expires},
 			})
 			require.Equal(t, tt.wantErr, err)
 		})

@@ -31,16 +31,16 @@ func Test_Extractor(t *testing.T) {
 	}{
 		{
 			name:          "header - Signature",
-			extractor:     NewSignatureExtractor(SignatureHeader),
-			headers:       map[string]string{SignatureHeader: testSignatureValue},
+			extractor:     NewSignatureExtractor(HeaderSignature),
+			headers:       map[string]string{HeaderSignature: testSignatureValue},
 			wantSignature: testSignatureValue,
 			wantScheme:    SchemeSignature,
 			wantErr:       nil,
 		},
 		{
 			name:          "header - Authorization",
-			extractor:     NewAuthorizationSignatureExtractor(AuthorizationHeader),
-			headers:       map[string]string{AuthorizationHeader: testAuthorizationSignatureValue},
+			extractor:     NewAuthorizationSignatureExtractor(HeaderAuthorizationHeader),
+			headers:       map[string]string{HeaderAuthorizationHeader: testAuthorizationSignatureValue},
 			wantSignature: testSignatureValue,
 			wantScheme:    SchemeAuthentication,
 			wantErr:       nil,
@@ -48,10 +48,10 @@ func Test_Extractor(t *testing.T) {
 		{
 			name: "header - multiple extractors first match",
 			extractor: MultiExtractor{
-				NewSignatureExtractor(SignatureHeader),
-				NewAuthorizationSignatureExtractor(AuthorizationHeader),
+				NewSignatureExtractor(HeaderSignature),
+				NewAuthorizationSignatureExtractor(HeaderAuthorizationHeader),
 			},
-			headers:       map[string]string{SignatureHeader: testSignatureValue},
+			headers:       map[string]string{HeaderSignature: testSignatureValue},
 			wantSignature: testSignatureValue,
 			wantScheme:    SchemeSignature,
 			wantErr:       nil,
@@ -59,17 +59,17 @@ func Test_Extractor(t *testing.T) {
 		{
 			name: "header - multiple extractors second match",
 			extractor: NewMultiExtractor(
-				NewSignatureExtractor(SignatureHeader),
-				NewAuthorizationSignatureExtractor(AuthorizationHeader),
+				NewSignatureExtractor(HeaderSignature),
+				NewAuthorizationSignatureExtractor(HeaderAuthorizationHeader),
 			),
-			headers:       map[string]string{AuthorizationHeader: testAuthorizationSignatureValue},
+			headers:       map[string]string{HeaderAuthorizationHeader: testAuthorizationSignatureValue},
 			wantSignature: testSignatureValue,
 			wantScheme:    SchemeAuthentication,
 			wantErr:       nil,
 		},
 		{
 			name:          "header - Signature miss",
-			extractor:     NewSignatureExtractor(SignatureHeader),
+			extractor:     NewSignatureExtractor(HeaderSignature),
 			headers:       map[string]string{"miss": testSignatureValue},
 			wantSignature: "",
 			wantScheme:    SchemeUnspecified,
@@ -77,7 +77,7 @@ func Test_Extractor(t *testing.T) {
 		},
 		{
 			name:          "header - Authorization miss",
-			extractor:     NewAuthorizationSignatureExtractor(AuthorizationHeader),
+			extractor:     NewAuthorizationSignatureExtractor(HeaderAuthorizationHeader),
 			headers:       map[string]string{"miss": testAuthorizationSignatureValue},
 			wantSignature: "",
 			wantScheme:    SchemeUnspecified,
@@ -86,8 +86,8 @@ func Test_Extractor(t *testing.T) {
 		{
 			name: "header - multiple extractors miss",
 			extractor: NewMultiExtractor(
-				NewSignatureExtractor(SignatureHeader),
-				NewAuthorizationSignatureExtractor(AuthorizationHeader),
+				NewSignatureExtractor(HeaderSignature),
+				NewAuthorizationSignatureExtractor(HeaderAuthorizationHeader),
 			),
 			headers:       map[string]string{"miss": testSignatureValue},
 			wantSignature: "",
@@ -98,7 +98,7 @@ func Test_Extractor(t *testing.T) {
 			name: "header - multiple extractors not ErrNoSignatureInRequest error",
 			extractor: NewMultiExtractor(
 				testExtractor("xx"),
-				NewSignatureExtractor(SignatureHeader),
+				NewSignatureExtractor(HeaderSignature),
 			),
 			headers:       map[string]string{"miss": testSignatureValue},
 			wantSignature: "",

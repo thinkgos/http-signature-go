@@ -23,7 +23,7 @@ func NewDateValidator() *DateValidator {
 
 // Validate return error when checking if header date is valid or not
 func (v *DateValidator) Validate(r *http.Request, _ *Parameter) error {
-	t, err := http.ParseTime(r.Header.Get(DateHeader))
+	t, err := http.ParseTime(r.Header.Get(Date))
 	if err != nil {
 		return ErrDateInvalid
 	}

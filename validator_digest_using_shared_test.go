@@ -40,7 +40,7 @@ func Test_Validator_DigestUsingShared(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				r, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/a", bytes.NewReader([]byte(tt.body)))
 
-				r.Header.Set(DigestHeader, tt.signBody)
+				r.Header.Set(Digest, tt.signBody)
 				err := tt.validator.Validate(r, &Parameter{
 					Method: tt.signingMethod,
 					Key:    tt.signingKey,

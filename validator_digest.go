@@ -23,7 +23,7 @@ func (v *DigestValidator) Validate(r *http.Request, _ *Parameter) error {
 	if r.ContentLength == 0 {
 		return nil
 	}
-	headerDigest := r.Header.Get(DigestHeader)
+	headerDigest := r.Header.Get(Digest)
 
 	// FIXME: using buffer to prevent using too much memory
 	body, err := io.ReadAll(r.Body)
