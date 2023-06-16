@@ -6,11 +6,22 @@ import (
 	"net/http"
 )
 
-type DigestUsingSharedValidator struct{}
+type DigestUsingSharedValidator struct {
+	confuseKey func(any) any
+}
 
 // NewDigestValidator return pointer of new DigestValidator
 func NewDigestUsingSharedValidator() *DigestUsingSharedValidator {
-	return &DigestUsingSharedValidator{}
+	return &DigestUsingSharedValidator{
+		confuseKey: func(k any) any { return k },
+	}
+}
+
+// NewDigestValidator return pointer of new DigestValidator
+func NewDigestUsingSharedWithConfuseValidator(f func(k any) any) *DigestUsingSharedValidator {
+	return &DigestUsingSharedValidator{
+		confuseKey: f,
+	}
 }
 
 // Validate return error when checking digest match body
@@ -28,6 +39,6 @@ func (v *DigestUsingSharedValidator) Validate(r *http.Request, p *Parameter) err
 	r.Body = io.NopCloser(bytes.NewBuffer(body))
 
 	headerDigest := r.Header.Get(Digest)
-	return NewDigestUsingShared(p.Method).
+	return NewDigestUsingSharedWithConfuse(p.Method, v.confuseKey).
 		Verify(body, headerDigest, p.Key)
 }
