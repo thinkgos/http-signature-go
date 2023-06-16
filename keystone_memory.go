@@ -6,11 +6,13 @@ import (
 
 var _ Keystone = (*KeystoneMemory)(nil)
 
+// KeystoneMemory memory keystone
 type KeystoneMemory struct {
 	mu    sync.RWMutex
 	store map[KeyId]Metadata
 }
 
+// NewKeystoneMemory new memory keystone
 func NewKeystoneMemory() *KeystoneMemory {
 	return &KeystoneMemory{
 		store: make(map[KeyId]Metadata),
