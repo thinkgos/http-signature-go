@@ -35,6 +35,7 @@ func (m *DigestHash) SignReader(r io.Reader) (string, error) {
 	if !m.Hash.Available() {
 		return "", ErrHashUnavailable
 	}
+
 	rd := bufio.NewReader(r)
 	hasher := m.Hash.New()
 	_, err := io.Copy(hasher, rd)

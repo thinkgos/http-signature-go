@@ -7,6 +7,7 @@ import (
 
 // Specific instances for hmac shaXXX
 var (
+	SigningMethodHmacMd5    = &SigningMethodHMAC{"hmac-md5", crypto.MD5}
 	SigningMethodHmacSha256 = &SigningMethodHMAC{"hmac-sha256", crypto.SHA256}
 	SigningMethodHmacSha384 = &SigningMethodHMAC{"hmac-sha384", crypto.SHA384}
 	SigningMethodHmacSha512 = &SigningMethodHMAC{"hmac-sha512", crypto.SHA512}
