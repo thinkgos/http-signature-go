@@ -7,22 +7,16 @@ import (
 
 type DigestUsingShared struct {
 	signingMethod SigningMethod
-	confuseKey    func(any) any
 }
 
 func NewDigestUsingShared(signingMethod SigningMethod) *DigestUsingShared {
-	return NewDigestUsingSharedWithConfuse(signingMethod, func(k any) any { return k })
-}
-
-func NewDigestUsingSharedWithConfuse(signingMethod SigningMethod, f func(k any) any) *DigestUsingShared {
 	return &DigestUsingShared{
 		signingMethod: signingMethod,
-		confuseKey:    f,
 	}
 }
 
 func (m *DigestUsingShared) Sign(signingBytes []byte, key any) (string, error) {
-	b, err := m.signingMethod.Sign(signingBytes, m.confuseKey(key))
+	b, err := m.signingMethod.Sign(signingBytes, key)
 	if err != nil {
 		return "", err
 	}
@@ -35,7 +29,7 @@ func (m *DigestUsingShared) Verify(signingBytes []byte, digestString string, key
 	if err != nil {
 		return ErrDigestMismatch
 	}
-	err = m.signingMethod.Verify(signingBytes, sig, m.confuseKey(key))
+	err = m.signingMethod.Verify(signingBytes, sig, key)
 	if err != nil {
 		return ErrDigestMismatch
 	}
