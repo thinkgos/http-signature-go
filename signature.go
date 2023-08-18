@@ -106,28 +106,28 @@ func (p *Parameter) MergerHeader(r *http.Request) error {
 	}
 	p.Signature = base64.StdEncoding.EncodeToString(signature)
 
-	b := strings.Builder{}
+	b := &strings.Builder{}
 	hd := HeaderSignature
 	if p.Scheme == SchemeAuthentication {
 		hd = HeaderAuthorization
 		b.WriteString(headerValueAuthorizationInitPrefix)
 	}
-	b.WriteString(fmt.Sprintf(`keyId="%s",`, p.KeyId))
-	b.WriteString(fmt.Sprintf(`algorithm="%s",`, p.Algorithm))
+	fmt.Fprintf(b, `keyId="%s",`, p.KeyId)
+	fmt.Fprintf(b, `algorithm="%s",`, p.Algorithm)
 	if p.Created > 0 {
-		b.WriteString(fmt.Sprintf(`created=%d,`, p.Created))
+		fmt.Fprintf(b, `created=%d,`, p.Created)
 	}
 	if p.Expires > 0 {
-		b.WriteString(fmt.Sprintf(`expires=%d,`, p.Expires))
+		fmt.Fprintf(b, `expires=%d,`, p.Expires)
 	}
-	b.WriteString(fmt.Sprintf(`headers="%s",`, strings.Join(p.Headers, " ")))
-	b.WriteString(fmt.Sprintf(`signature="%s"`, p.Signature))
+	fmt.Fprintf(b, `headers="%s",`, strings.Join(p.Headers, " "))
+	fmt.Fprintf(b, `signature="%s"`, p.Signature)
 	r.Header.Set(hd, b.String())
 	return nil
 }
 
 func ConstructSignMessageFromRequest(r *http.Request, p *Parameter) string {
-	b := strings.Builder{}
+	b := &strings.Builder{}
 	for i, k := range p.Headers {
 		var v string
 		switch k {
@@ -147,7 +147,7 @@ func ConstructSignMessageFromRequest(r *http.Request, p *Parameter) string {
 		if v == "" {
 			v = " "
 		}
-		b.WriteString(fmt.Sprintf("%s: %s", k, v))
+		fmt.Fprintf(b, "%s: %s", k, v)
 		if i < len(p.Headers)-1 {
 			b.WriteString("\n")
 		}
