@@ -3,11 +3,10 @@ package httpsign
 import (
 	"encoding/base64"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
-
-	"golang.org/x/exp/slices"
 )
 
 // minimum include the `(request-target)` and`(created)` header fields

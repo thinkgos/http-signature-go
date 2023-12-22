@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/things-go/http-signature-go/digest"
+	"github.com/thinkgos/http-signature-go/digest"
 )
 
 // DigestValidator checking digest in header match body

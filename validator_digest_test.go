@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/things-go/http-signature-go/digest"
+	"github.com/thinkgos/http-signature-go/digest"
 )
 
 func Test_Validator_Digest(t *testing.T) {
