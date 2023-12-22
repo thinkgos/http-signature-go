@@ -59,7 +59,7 @@ func main() {
 	}
 
 	// parser http.Request
-	// httpSignParser.ParseFromRequest()
+	// httpSignParser.ParseFromRequest() and httpSignParser.Verify
 	// or
 	// httpSignParser.ParseVerify()
 }

@@ -28,77 +28,6 @@ Then import the package into your own code.
 
 ### Example
 
-### Decode
-
-[embedmd]:# (examples/decoder.go go)
-```go
-//go:build decoder
-
-package main
-
-import (
-	httpsign "github.com/thinkgos/http-signature-go"
-)
-
-func main() {
-	keystone := httpsign.NewKeystoneMemory()
-
-	httpSignParser := httpsign.NewParser(
-		httpsign.WithMinimumRequiredHeaders([]string{
-			httpsign.RequestTarget,
-			httpsign.Date,
-			httpsign.Nonce,
-			httpsign.Digest,
-		}),
-		httpsign.WithSigningMethods(
-			httpsign.SigningMethodHmacSha256.Alg(),
-			func() httpsign.SigningMethod { return httpsign.SigningMethodHmacSha256 },
-		),
-		httpsign.WithSigningMethods(
-			httpsign.SigningMethodHmacSha384.Alg(),
-			func() httpsign.SigningMethod { return httpsign.SigningMethodHmacSha384 },
-		),
-		httpsign.WithSigningMethods(
-			httpsign.SigningMethodHmacSha512.Alg(),
-			func() httpsign.SigningMethod { return httpsign.SigningMethodHmacSha512 },
-		),
-		httpsign.WithValidators(
-			httpsign.NewDigestUsingSharedValidator(),
-			httpsign.NewDateValidator(),
-		),
-		httpsign.WithKeystone(keystone),
-	)
-
-	err := httpSignParser.AddMetadata(
-		httpsign.KeyId("key_id_1"),
-		httpsign.Metadata{
-			Scheme: httpsign.SchemeSignature,
-			Alg:    "hmac-sha512",
-			Key:    []byte("key_secret_1"),
-		},
-	)
-	if err != nil {
-		panic(err)
-	}
-	err = httpSignParser.AddMetadata(
-		httpsign.KeyId("key_id_2"),
-		httpsign.Metadata{
-			Scheme: httpsign.SchemeSignature,
-			Alg:    "hmac-sha512",
-			Key:    []byte("key_secret_2"),
-		},
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	// parser http.Request
-	// httpSignParser.ParseFromRequest()
-	// or
-	// httpSignParser.ParseVerify()
-}
-```
-
 ### Encode
 
 [embedmd]:# (examples/encoder.go go)
@@ -170,6 +99,180 @@ func main() {
 
 	// Now: use the request, which carry http signature headers
 	// _ = r
+}
+```
+
+### Decode
+
+[embedmd]:# (examples/decoder.go go)
+```go
+//go:build decoder
+
+package main
+
+import (
+	httpsign "github.com/thinkgos/http-signature-go"
+)
+
+func main() {
+	keystone := httpsign.NewKeystoneMemory()
+
+	httpSignParser := httpsign.NewParser(
+		httpsign.WithMinimumRequiredHeaders([]string{
+			httpsign.RequestTarget,
+			httpsign.Date,
+			httpsign.Nonce,
+			httpsign.Digest,
+		}),
+		httpsign.WithSigningMethods(
+			httpsign.SigningMethodHmacSha256.Alg(),
+			func() httpsign.SigningMethod { return httpsign.SigningMethodHmacSha256 },
+		),
+		httpsign.WithSigningMethods(
+			httpsign.SigningMethodHmacSha384.Alg(),
+			func() httpsign.SigningMethod { return httpsign.SigningMethodHmacSha384 },
+		),
+		httpsign.WithSigningMethods(
+			httpsign.SigningMethodHmacSha512.Alg(),
+			func() httpsign.SigningMethod { return httpsign.SigningMethodHmacSha512 },
+		),
+		httpsign.WithValidators(
+			httpsign.NewDigestUsingSharedValidator(),
+			httpsign.NewDateValidator(),
+		),
+		httpsign.WithKeystone(keystone),
+	)
+
+	err := httpSignParser.AddMetadata(
+		httpsign.KeyId("key_id_1"),
+		httpsign.Metadata{
+			Scheme: httpsign.SchemeSignature,
+			Alg:    "hmac-sha512",
+			Key:    []byte("key_secret_1"),
+		},
+	)
+	if err != nil {
+		panic(err)
+	}
+	err = httpSignParser.AddMetadata(
+		httpsign.KeyId("key_id_2"),
+		httpsign.Metadata{
+			Scheme: httpsign.SchemeSignature,
+			Alg:    "hmac-sha512",
+			Key:    []byte("key_secret_2"),
+		},
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	// parser http.Request
+	// httpSignParser.ParseFromRequest() and httpSignParser.Verify
+	// or
+	// httpSignParser.ParseVerify()
+}
+```
+
+### Encode/Decode
+
+[embedmd]:# (examples/encoder_decoder.go go)
+```go
+package main
+
+import (
+	"context"
+	"net/http"
+	"reflect"
+	"slices"
+	"strconv"
+	"time"
+
+	httpsign "github.com/thinkgos/http-signature-go"
+)
+
+// mock interface always return true
+type timeAlwaysValid struct{}
+
+func (v *timeAlwaysValid) Validate(r *http.Request, _ *httpsign.Parameter) error { return nil }
+
+func main() {
+	//* encoder
+
+	r, err := http.NewRequestWithContext(context.Background(), "GET", "/", nil)
+	if err != nil {
+		panic(err)
+	}
+
+	p := &httpsign.Parameter{
+		KeyId:     "key_id_1",
+		Signature: "",
+		Algorithm: "",
+		Created:   time.Now().Add(-time.Hour).UTC().Unix(),
+		Expires:   0,
+		Headers:   []string{httpsign.RequestTarget, httpsign.Created, httpsign.Host},
+		Scheme:    httpsign.SchemeSignature,
+		Method:    httpsign.SigningMethodHmacSha256,
+		Key:       []byte("1234"),
+	}
+
+	wantCreatedHeader := strconv.FormatInt(p.Created, 10)
+	r.Header.Set(httpsign.Created, wantCreatedHeader)
+	err = p.MergerHeader(r)
+	if err != nil {
+		panic(err)
+	}
+
+	//* decoder
+
+	// validate created always valid
+	parser := httpsign.NewParser(
+		httpsign.WithMinimumRequiredHeaders([]string{httpsign.RequestTarget, httpsign.Created, httpsign.Host}),
+		httpsign.WithSigningMethods(httpsign.SigningMethodHmacSha256.Alg(), func() httpsign.SigningMethod { return httpsign.SigningMethodHmacSha256 }),
+		httpsign.WithValidators(&timeAlwaysValid{}),
+	)
+	err = parser.AddMetadata("key_id_1", httpsign.Metadata{
+		Scheme: httpsign.SchemeUnspecified,
+		Alg:    httpsign.SigningMethodHmacSha256.Alg(),
+		Key:    []byte("1234"),
+	})
+	if err != nil {
+		panic(err)
+	}
+	// parser http.Request
+
+	// use httpSignParser.ParseFromRequest() and httpSignParser.Verify
+	gotParam, err := parser.ParseFromRequest(r)
+	if err != nil {
+		panic(err)
+	}
+	if p.KeyId != gotParam.KeyId ||
+		p.Signature != gotParam.Signature ||
+		p.Algorithm != gotParam.Algorithm ||
+		p.Created != gotParam.Created ||
+		p.Expires != gotParam.Expires ||
+		!slices.Equal(p.Headers, gotParam.Headers) ||
+		p.Scheme != gotParam.Scheme {
+		panic("param miss match")
+	}
+	err = parser.Verify(r, gotParam)
+	if err != nil {
+		panic(err)
+	}
+	if p.Method != gotParam.Method ||
+		!reflect.DeepEqual(p.Key, gotParam.Key) ||
+		p.Scheme != gotParam.Scheme {
+		panic("param miss match")
+	}
+	// or
+
+	// use httpSignParser.ParseVerify()
+	gotScheme, err := parser.ParseVerify(r)
+	if err != nil {
+		panic(err)
+	}
+	if gotScheme != p.Scheme {
+		panic("schema miss match")
+	}
 }
 ```
 
