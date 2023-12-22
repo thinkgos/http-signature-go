@@ -28,7 +28,7 @@ Then import the package into your own code.
 
 ### Example
 
-### Encode
+#### Encode
 
 [embedmd]:# (examples/encoder.go go)
 ```go
@@ -102,7 +102,7 @@ func main() {
 }
 ```
 
-### Decode
+#### Decode
 
 [embedmd]:# (examples/decoder.go go)
 ```go
@@ -173,7 +173,7 @@ func main() {
 }
 ```
 
-### Encode/Decode
+#### Encode/Decode
 
 [embedmd]:# (examples/encoder_decoder.go go)
 ```go
