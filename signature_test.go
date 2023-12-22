@@ -16,7 +16,7 @@ type timeAlwaysValid struct{}
 
 func (v *timeAlwaysValid) Validate(r *http.Request, _ *Parameter) error { return nil }
 
-func TestSignatureInvalidMethode(t *testing.T) {
+func TestSignatureInvalidMethod(t *testing.T) {
 	r, err := http.NewRequestWithContext(context.Background(), "GET", "/", nil)
 	require.NoError(t, err)
 

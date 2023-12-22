@@ -28,8 +28,149 @@ Then import the package into your own code.
 
 ### Example
 
+### Decode
+
+[embedmd]:# (examples/decoder.go go)
 ```go
-    
+//go:build decoder
+
+package main
+
+import (
+	httpsign "github.com/thinkgos/http-signature-go"
+)
+
+func main() {
+	keystone := httpsign.NewKeystoneMemory()
+
+	httpSignParser := httpsign.NewParser(
+		httpsign.WithMinimumRequiredHeaders([]string{
+			httpsign.RequestTarget,
+			httpsign.Date,
+			httpsign.Nonce,
+			httpsign.Digest,
+		}),
+		httpsign.WithSigningMethods(
+			httpsign.SigningMethodHmacSha256.Alg(),
+			func() httpsign.SigningMethod { return httpsign.SigningMethodHmacSha256 },
+		),
+		httpsign.WithSigningMethods(
+			httpsign.SigningMethodHmacSha384.Alg(),
+			func() httpsign.SigningMethod { return httpsign.SigningMethodHmacSha384 },
+		),
+		httpsign.WithSigningMethods(
+			httpsign.SigningMethodHmacSha512.Alg(),
+			func() httpsign.SigningMethod { return httpsign.SigningMethodHmacSha512 },
+		),
+		httpsign.WithValidators(
+			httpsign.NewDigestUsingSharedValidator(),
+			httpsign.NewDateValidator(),
+		),
+		httpsign.WithKeystone(keystone),
+	)
+
+	err := httpSignParser.AddMetadata(
+		httpsign.KeyId("key_id_1"),
+		httpsign.Metadata{
+			Scheme: httpsign.SchemeSignature,
+			Alg:    "hmac-sha512",
+			Key:    []byte("key_secret_1"),
+		},
+	)
+	if err != nil {
+		panic(err)
+	}
+	err = httpSignParser.AddMetadata(
+		httpsign.KeyId("key_id_2"),
+		httpsign.Metadata{
+			Scheme: httpsign.SchemeSignature,
+			Alg:    "hmac-sha512",
+			Key:    []byte("key_secret_2"),
+		},
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	// parser http.Request
+	// httpSignParser.ParseFromRequest()
+	// or
+	// httpSignParser.ParseVerify()
+}
+```
+
+### Encode
+
+[embedmd]:# (examples/encoder.go go)
+```go
+//go:build encoder
+
+package main
+
+import (
+	"bytes"
+	"io"
+	"net/http"
+	"time"
+
+	httpsign "github.com/thinkgos/http-signature-go"
+)
+
+func main() {
+	// this is a test request
+	r, err := http.NewRequest("POST", "http://example.com", bytes.NewBufferString("example.com"))
+	if err != nil {
+		panic(err)
+	}
+
+	var body []byte
+	var digest string
+
+	if r.Body != nil {
+		body, err = io.ReadAll(r.Body)
+		if err != nil {
+			panic(err)
+		}
+		r.Body.Close()
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
+	}
+	keyId, keySecret := "key_id_1", "key_secret_1"
+
+	paramter := httpsign.Parameter{
+		KeyId:     httpsign.KeyId(keyId),
+		Signature: "",
+		Algorithm: "",
+		Created:   0,
+		Expires:   0,
+		Headers: []string{
+			httpsign.RequestTarget,
+			httpsign.Date,
+			httpsign.Nonce,
+			httpsign.Digest,
+		},
+		Scheme: httpsign.SchemeSignature,
+		Method: httpsign.SigningMethodHmacSha512,
+		Key:    []byte(keySecret),
+	}
+
+	if len(body) > 0 {
+		digest, err = httpsign.NewDigestUsingShared(paramter.Method).
+			Sign(body, paramter.Key)
+		if err != nil {
+			panic(err)
+		}
+	}
+	r.Header.Set(httpsign.Date, time.Now().UTC().Format(http.TimeFormat))
+	r.Header.Set(httpsign.Nonce, "abcdefghijklmnopqrstuvwxyz123456") // 32位随机字符串
+	r.Header.Set(httpsign.Digest, digest)
+	err = paramter.MergerHeader(r)
+	if err != nil {
+		panic(err)
+	}
+
+	// Now: use the request, which carry http signature headers
+	// _ = r
+}
 ```
 
 ## License
