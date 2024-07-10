@@ -30,7 +30,7 @@ Then import the package into your own code.
 
 #### Encode
 
-[embedmd]:# (examples/encoder.go go)
+[embedmd]:# (_examples/encoder.go go)
 ```go
 //go:build encoder
 
@@ -104,7 +104,7 @@ func main() {
 
 #### Decode
 
-[embedmd]:# (examples/decoder.go go)
+[embedmd]:# (_examples/decoder.go go)
 ```go
 //go:build decoder
 
@@ -175,7 +175,7 @@ func main() {
 
 #### Encode/Decode
 
-[embedmd]:# (examples/encoder_decoder.go go)
+[embedmd]:# (_examples/encoder_decoder.go go)
 ```go
 package main
 
