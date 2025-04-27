@@ -6,7 +6,7 @@ import (
 )
 
 // ErrSignature the signature verify failure.
-var ErrSignature = errors.New("the signature verify failure.")
+var ErrSignature = errors.New("the signature verify failure")
 
 // Digest can be used sign an input.
 // The sign is then usually base64 encoded.

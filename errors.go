@@ -46,9 +46,9 @@ var (
 	ErrHashUnavailable = errors.New("the requested hash function is unavailable")
 
 	// ErrUnterminatedParameter could not parse value
-	ErrUnterminatedParameter = errors.New("Unterminated parameter")
+	ErrUnterminatedParameter = errors.New("unterminated parameter")
 	// ErrMissingDoubleQuote after character = not have double quote
-	ErrMissingDoubleQuote = errors.New(`Missing " after = character`)
+	ErrMissingDoubleQuote = errors.New(`missing " after = character`)
 	// ErrMissingEqualCharacter there is no character = before " or , character
-	ErrMissingEqualCharacter = errors.New(`Missing = character =`)
+	ErrMissingEqualCharacter = errors.New(`missing = character =`)
 )

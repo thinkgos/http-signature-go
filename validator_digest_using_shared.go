@@ -24,7 +24,7 @@ func (v *DigestUsingSharedValidator) Validate(r *http.Request, p *Parameter) err
 	if err != nil {
 		return err
 	}
-	r.Body.Close()
+	r.Body.Close() // nolint: errcheck
 	r.Body = io.NopCloser(bytes.NewBuffer(body))
 
 	headerDigest := r.Header.Get(Digest)

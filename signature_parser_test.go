@@ -30,7 +30,7 @@ func (m *SigningMethodHash) Verify(signingString []byte, sig []byte, _ any) erro
 		return ErrHashUnavailable
 	}
 	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
+	hasher.Write(signingString)
 	if !hmac.Equal(sig, hasher.Sum(nil)) {
 		return ErrSignatureInvalid
 	}
@@ -42,7 +42,7 @@ func (m *SigningMethodHash) Sign(signingString []byte, _ any) ([]byte, error) {
 		return nil, ErrHashUnavailable
 	}
 	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
+	hasher.Write(signingString)
 	return hasher.Sum(nil), nil
 }
 
@@ -73,6 +73,7 @@ func newAuthorizationHeader1(s string) http.Header {
 	}
 }
 
+/*
 // `(request-target)`, `(created)`, `(expires)`
 // invalid created value
 func newAuthorizationHeader1InvalidCreated(s string) http.Header {
@@ -102,6 +103,8 @@ func newAuthorizationHeader2(s string) http.Header {
 		Date:                []string{sampleDate},
 	}
 }
+
+*/
 
 func newSignatureHeader(s string) http.Header {
 	return http.Header{

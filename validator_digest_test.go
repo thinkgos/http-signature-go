@@ -12,7 +12,7 @@ import (
 
 func Test_Validator_Digest(t *testing.T) {
 	t.Run("digest mismatch", func(t *testing.T) {
-		r, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/a", bytes.NewReader([]byte([]byte("hello world!!"))))
+		r, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/a", bytes.NewReader([]byte("hello world!!")))
 
 		r.Header.Set(Digest, "invalid body")
 		err := NewDigestValidator(digest.DigestHashSha256).Validate(r, &Parameter{})
@@ -40,7 +40,7 @@ func Test_Validator_Digest(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				r, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/a", bytes.NewReader([]byte(tt.body)))
+				r, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/a", bytes.NewReader(tt.body))
 
 				bodyDigest, err := tt.digest.Sign(tt.body)
 				require.NoError(t, err)

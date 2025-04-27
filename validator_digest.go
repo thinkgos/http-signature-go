@@ -30,7 +30,7 @@ func (v *DigestValidator) Validate(r *http.Request, _ *Parameter) error {
 	if err != nil {
 		return err
 	}
-	r.Body.Close()
+	r.Body.Close() // nolint: errcheck
 	r.Body = io.NopCloser(bytes.NewBuffer(body))
 	digest, err := v.digest.Sign(body)
 	if err != nil {
