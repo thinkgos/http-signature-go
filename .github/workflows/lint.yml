@@ -4,21 +4,21 @@ on:
   push:
     paths-ignore:
       - "**.md"
+      - "_examples/**"
+
+permissions:
+  contents: read
+  packages: read
+  issues: write
 
 jobs:
   golang-ci:
     name: GolangCi-Lint
     runs-on: ubuntu-latest
     steps:
-      # optionally use a specific version of Go rather than the default one
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: "1.26.x"
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v7
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
-        with: 
+        with:
           args: -E misspell,whitespace,unconvert,noctx,musttag,errchkjson,errname,exhaustive,exptostd
           version: latest

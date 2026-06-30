@@ -4,6 +4,12 @@ on:
   pull_request:
     paths-ignore:
       - "**.md"
+      - "assets/**"
+
+permissions:
+  contents: read
+  packages: read
+  issues: write
 
 jobs:
   golangci-lint:
@@ -15,12 +21,13 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: "1.26.x"
+          cache: true
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v7
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
-        with: 
+        with:
           args: -E misspell,whitespace,unconvert,noctx,musttag,errchkjson,errname,exhaustive,exptostd
           version: latest
